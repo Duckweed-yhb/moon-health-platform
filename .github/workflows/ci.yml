@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MoonBit
+        uses: hustcer/setup-moonbit@v1
+
+      # 平台是 native 编排工具：CLI、编排层、报告层都依赖 MoonHive 的
+      # C FFI（进程执行 / 文件系统），只在 native 后端完整可用。
+      - name: Build (native)
+        run: moon build --target native
+
+      - name: Test (native)
+        run: moon test --target native
+
+      # CLI 冒烟测试：doctor 依赖真实外网（git ls-remote）不适合当门禁，
+      # 用 version 验证 CLI 可运行即可。
+      - name: CLI smoke test - version
+        run: moon run cmd/moonhealth --target native -- version

@@ -1,0 +1,31 @@
+///|
+/// MoonHealth Platform — MoonBit 生态健康验证平台 CLI
+///
+/// 用法: moonhealth <命令> [参数...]
+///
+/// 命令:
+///   check <候选>...       生态健康检查：归因 + 可选文档验证，输出统一报告
+///   doctor                检查平台运行环境（moon / git / 临时目录）
+///   version               打印版本
+///   help                  打印本帮助
+///
+/// 候选写法: owner/repo | https://github.com/owner/repo | 本地目录路径
+///
+/// 退出码约定（与子工具对齐）：
+///   0  成功（全部健康 / 无失败）
+///   1  有失败（包不可用 / 文档失效）
+///   2  运行错误 / 参数错误
+///   10 环境错误   14 参数错误   15 工具链错误
+pkgtype(kind: "executable")
+supported_targets = "native"
+
+import {
+  "Duckweed/moon-hive/verify/diagnose" @diagnose,
+  "Duckweed/moon-hive/verify/check" @check,
+  "Duckweed/moon-hive/verify/gitsource" @gitsource,
+  "Duckweed/moon-hive/verify/workspace" @workspace,
+  "Duckweed/moon-hive/platform/proc" @proc,
+  "Duckweed/moon-health-platform/features/orchestrate" @orchestrate,
+  "Duckweed/moon-health-platform/features/report" @report,
+  "moonbitlang/core/env" @env,
+}

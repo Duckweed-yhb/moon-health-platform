@@ -1,0 +1,9 @@
+///|
+/// features/orchestrate — 平台编排层（纯计算，可移植）
+///
+/// 这里只放健康报告的纯数据模型与渲染（不 import 任何 C FFI 包），
+/// 因此声明覆盖全部四个后端，作为平台的可移植核心。
+/// 实际的子进程编排（调 moon-proof / moon-hive CLI）放在 cmd/moonhealth（native）。
+supported_targets = "wasm+wasm-gc+js+native"
+
+import {}

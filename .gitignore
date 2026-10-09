@@ -1,0 +1,31 @@
+# MoonBit build artifacts & local cache
+target/
+_build/
+.mooncakes/
+*.mbti
+_probe_import/
+
+# Local scratch / debug probes (never part of the deliverable)
+_bom_probe.txt
+__probe*
+_probe_fs/
+
+# Runtime data (local cache, not for public repo)
+*.tmp
+snapshot*.txt
+
+# Personal application materials (contains private info, submitted via portal)
+申报书*.md
+备赛/
+赛事材料.md
+备赛说明.md
+
+# OS / editor / temp files
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.log
+*.swp
+.vscode/
+.idea/
+.preview/

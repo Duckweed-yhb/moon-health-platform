@@ -1,0 +1,10 @@
+///|
+/// features/report — 平台统一报告渲染层（纯计算，可移植）
+///
+/// 不 import 任何 C FFI 包，声明覆盖全部四个后端。
+/// 依赖 features/orchestrate（HealthReport 数据模型）。
+supported_targets = "wasm+wasm-gc+js+native"
+
+import {
+  "Duckweed/moon-health-platform/features/orchestrate" @orchestrate,
+}
