@@ -13,5 +13,5 @@ license = "MIT"
 keywords = ["moonbit", "ecosystem", "verification", "documentation", "cli", "developer-tools", "platform"]
 
 import {
-  "Duckweed/moon-hive@0.2.3",
+  "Duckweed/moon-hive@0.2.4",
 }
