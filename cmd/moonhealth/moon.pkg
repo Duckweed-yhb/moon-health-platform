@@ -25,7 +25,9 @@ import {
   "Duckweed/moon-hive/verify/gitsource" @gitsource,
   "Duckweed/moon-hive/verify/workspace" @workspace,
   "Duckweed/moon-hive/platform/proc" @proc,
+  "Duckweed/moon-hive/platform/fs" @fs,
   "Duckweed/moon-health-platform/features/orchestrate" @orchestrate,
   "Duckweed/moon-health-platform/features/report" @report,
+  "Duckweed/moon-health-platform/features/jsonparse" @jsonparse,
   "moonbitlang/core/env" @env,
 }

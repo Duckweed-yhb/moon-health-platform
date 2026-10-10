@@ -17,7 +17,8 @@ MoonBit 生态在快速增长，但开发者在选包、用包、维护包时缺
 moon-health-platform/
 ├── features/
 │   ├── orchestrate/       平台编排层：HealthReport 数据模型 + 合并逻辑（纯计算）
-│   └── report/            统一报告渲染：Markdown / JSON / 统计（纯计算，四后端可移植）
+│   ├── report/            统一报告渲染：Markdown / JSON / 统计（纯计算，四后端可移植）
+│   └── jsonparse/         最小但严格的 JSON 解析器（纯计算，解析 MoonProof --out 报告）
 ├── cmd/
 │   └── moonhealth/        CLI 入口：check / doctor / version / help
 ├── moon.mod               包声明（Duckweed/moon-health-platform）
@@ -123,13 +124,28 @@ JSON: [{"subject":"moonbit-community/yaml","verdict":"Verified",...}]
 
 ## 文档验证（可选接入 MoonProof）
 
-`--moonproof <cmd>` 让平台通过子进程调用 [MoonProof](https://github.com/Duckweed-yhb/MoonProof) 验证候选仓库的文档代码示例是否仍可编译。当前版本对 MoonProof 输出的块数做保守解析（尚未接入 `--out JSON` 严格解析），报告如实标注"无文档验证数据"，不夸大能力。
+`--moonproof <cmd>` 让平台通过子进程调用 [MoonProof](https://github.com/Duckweed-yhb/MoonProof) 验证候选仓库的文档代码示例是否仍可编译。平台会追加 `--out <临时 JSON 路径>`，用自带的 `features/jsonparse`（最小但严格的 JSON 解析器）解析 MoonProof 输出的报告数组，汇总每个文档的 `total / passed / failed`，得到真实的"文档验证：X 通过 / Y 失败"数字：
+
+- 候选无文档块（total==0）→ `has_docs=false`，健康判定只看包可用性；
+- 候选有文档块 → `has_docs=true`，任一失败块使整体不健康；
+- 解析失败（子进程异常 / JSON 不可读）→ 如实回退为"无文档验证数据"，不夸大能力。
+
+示例（纯本地包）：
+
+```text
+✅ mh-e2e-pkg  →  Verified
+    包可用性: 可用
+    文档验证: 2 通过 / 0 失败
+    整体健康: ✅ 健康
+```
+
+> 已知局限：子进程命令经 moon-hive 的 `platform/proc` 以 ASCII 转换执行，命令路径含中文（如 `E:/future/yhb/03-竞赛/...`）时会被替换为 `?` 导致失败。这与 moon-hive `fs` 已支持的宽字符不同，属 `proc` 层待补强项（见「三项目完善计划」）。
 
 ## 开发
 
 ```bash
 moon build --target native        # 构建
-moon test --target native         # 运行测试（当前 10 个）
+moon test --target native         # 运行测试（当前 18 个）
 ```
 
 持续集成见 `.github/workflows/`，覆盖检查、构建、测试流程。

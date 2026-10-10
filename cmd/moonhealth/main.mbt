@@ -200,13 +200,17 @@ fn resolve_candidate(raw : String) -> Result[@gitsource.Candidate, String] {
 }
 
 ///|
-/// 调用 MoonProof CLI 验证候选仓库的文档示例。
-/// moonproof_cmd 是子进程命令模板（不含候选目录），本函数把候选目录追加进去。
+/// 调用 MoonProof CLI 验证候选仓库的文档示例，并**严格解析**其 `--out` JSON。
+///
+/// `moonproof_cmd` 是子进程命令模板（不含候选目录），本函数把候选目录和
+/// `--out <临时 JSON 路径>` 追加进去，MoonProof 会把每个文档的
+/// `{total, passed, failed, skipped, blocks}` 写成 JSON 数组。
+///
 /// 返回 (通过块数, 失败块数, 是否有文档需要验证)。
 ///
-/// 说明：当前版本把 MoonProof 文本输出里的块数做保守解析——尚未接入
-/// MoonProof 的 --out JSON 严格解析（后续版本接入）。因此实际返回
-/// (0, 0, false)，即"未统计到文档验证结果"，报告如实标注"无文档验证数据"。
+/// 相比此前的保守解析（固定返回 (0,0,false)），这里真正解析 JSON：
+/// - 无文档（total==0）→ has_docs=false，健康判定只看包可用性；
+/// - 有文档 → has_docs=true，任一失败块使整体不健康。
 fn run_moonproof(
   moonproof_cmd : String,
   cand : @gitsource.Candidate
@@ -215,10 +219,55 @@ fn run_moonproof(
   if !@gitsource.is_local(cand) {
     return (0, 0, false)
   }
-  let cmd = moonproof_cmd + " " + cand.local_path
+  // 用时间戳构造唯一临时 JSON 路径，避免并发冲突
+  let stamp = @env.now()
+  let json_path = @proc.join_path(
+    @proc.temp_dir(),
+    "moonhealth-docs-" + stamp.to_string() + ".json",
+  )
+  let cmd = moonproof_cmd + " " + cand.local_path + " --out " + json_path
   match @proc.run(cmd, "", 300000) {
-    Ok(_o) => (0, 0, false)
     Err(_) => (0, 0, false)
+    Ok(_o) =>
+      // read_text 失败（文件不存在 / 空）时返回空串，parse 会报 Err，语义正确。
+      match @jsonparse.parse(@fs.read_text(json_path)) {
+        Err(_) => (0, 0, false)
+        Ok(root) => sum_docs(root)
+      }
+  }
+}
+
+///|
+/// 从 MoonProof 的 JSON 数组汇总文档验证统计。
+/// 每个元素形如 `{"path":..., "total":N, "passed":P, "failed":F, "skipped":S, ...}`。
+/// 返回 (passed 总和, failed 总和, 是否有任何文档块)。
+fn sum_docs(root : @jsonparse.JsonValue) -> (Int, Int, Bool) {
+  let mut passed = 0
+  let mut failed = 0
+  let mut total = 0
+  match root {
+    @jsonparse.JsonArray(rows) => {
+      for row in rows {
+        total = total + int_field(row, "total")
+        passed = passed + int_field(row, "passed")
+        failed = failed + int_field(row, "failed")
+      }
+    }
+    _ => ()
+  }
+  (passed, failed, total > 0)
+}
+
+///|
+/// 从对象取整数字段；字段缺失或非整数按 0 计（对无文档项无副作用）。
+fn int_field(obj : @jsonparse.JsonValue, key : String) -> Int {
+  match @jsonparse.field(obj, key) {
+    Some(v) =>
+      match @jsonparse.int_of(v) {
+        Some(n) => n
+        None => 0
+      }
+    None => 0
   }
 }
 
