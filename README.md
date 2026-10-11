@@ -150,6 +150,13 @@ moon test --target native         # 运行测试（当前 18 个）
 
 持续集成见 `.github/workflows/`，覆盖检查、构建、测试流程。
 
+## 工程文档
+
+- [CHANGELOG](./CHANGELOG.md) — 版本变更记录
+- [CONTRIBUTING](./CONTRIBUTING.md) — 贡献指南
+- [ROADMAP](./ROADMAP.md) — 路线图
+- [docs/AI-USAGE](./docs/AI-USAGE.md) — AI 使用说明（赛事"AI 可解释"要求）
+
 ## 许可证
 
 [MIT](./LICENSE) · © Duckweed-yhb
