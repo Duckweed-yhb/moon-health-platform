@@ -171,3 +171,59 @@ test "escape 处理引号与反斜杠" {
   assert_eq(escape("a\"b"), "a\\\"b")
   assert_eq(escape("c\\d"), "c\\\\d")
 }
+
+// ---------- 编排合并逻辑边界用例（A3 补强） ----------
+
+test "healthy 真值表：包不可用 + 文档全过 → 不健康" {
+  let r = make_health_report("o/p", "Unsafe", "含 FFI", "🔒", false, 3, 0, true)
+  assert_false(r.healthy)
+}
+
+test "healthy 真值表：无文档 + 包不可用 → 不健康" {
+  let r = make_health_report("o/p", "FetchFailed", "拉取失败", "❌", false, 0, 0, false)
+  assert_false(r.healthy)
+}
+
+test "healthy 真值表：有文档但 0 过 0 失（total=0 却标 has_docs）→ 健康" {
+  let r = make_health_report("o/p", "Verified", "", "✅", true, 0, 0, true)
+  assert_true(r.healthy)
+}
+
+test "healthy 真值表：可用 + 文档全过 → 健康（重复确认）" {
+  let r = make_health_report("o/p", "Verified", "", "✅", true, 7, 0, true)
+  assert_true(r.healthy)
+  assert_true(r.has_docs)
+}
+
+test "render_health：有文档显示通过/失败且反映不健康" {
+  let r = make_health_report("a/b", "Verified", "编译通过", "✅", true, 2, 1, true)
+  let s = render_health(r)
+  assert_true(s.contains("2 通过 / 1 失败"))
+  assert_true(s.contains("❌ 不健康"))
+}
+
+test "render_health：无文档显示无文档需要验证且健康" {
+  let r = make_health_report("a/b", "Verified", "编译通过", "✅", true, 0, 0, false)
+  let s = render_health(r)
+  assert_true(s.contains("无文档需要验证"))
+  assert_true(s.contains("✅ 健康"))
+}
+
+test "render_health：包不可用显示不可用" {
+  let r = make_health_report("a/b", "Unsafe", "含 FFI", "🔒", false, 0, 0, false)
+  let s = render_health(r)
+  assert_true(s.contains("包可用性: 不可用"))
+  assert_true(s.contains("❌ 不健康"))
+}
+
+test "to_json 包不可用无文档字段正确" {
+  let r = make_health_report("a/b", "Unsafe", "含FFI", "🔒", false, 0, 0, false)
+  let j = to_json(r)
+  assert_true(j.contains("\"usable\":false"))
+  assert_true(j.contains("\"has_docs\":false"))
+  assert_true(j.contains("\"healthy\":false"))
+}
+
+test "escape 保留 Unicode 普通文本" {
+  assert_eq(escape("中文正常 abc"), "中文正常 abc")
+}

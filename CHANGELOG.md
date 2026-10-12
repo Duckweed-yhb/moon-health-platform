@@ -9,6 +9,11 @@
 
 - `--moonproof` 接入 `--out JSON` 严格解析：新增 `features/jsonparse`（最小但严格的 JSON 解析器，纯计算、四后端可移植），`run_moonproof` 改为追加 `--out <临时 JSON>` 并解析 MoonProof 报告数组，汇总每个文档块的通过 / 失败 / 总数，文档验证输出真实数字。
 - 工程文档：CHANGELOG / CONTRIBUTING / ROADMAP / AI 使用说明。
+- 测试补强：编排合并逻辑边界用例（`healthy` 真值表、`render_health` 分支、`render_markdown` 无文档/有文档/多对象/空数组、`summarize` 空数组与失败块累加、`to_json` 包不可用字段、`escape` Unicode），测试数 18 → 34。
+
+### Known Issues
+
+- 本地在含中文的目录跑 native 测试可能触发 gcc 汇编器无法生成 `.obj` 的中文路径编码问题；可用 `moon test --target wasm-gc` 验证纯计算模块（CI 在无中文路径无此问题）。
 
 ## [0.1.0] - 2026-10-10
 

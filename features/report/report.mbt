@@ -112,3 +112,57 @@ test "render_json 空数组" {
   let j = render_json([])
   assert_eq(j, "[]")
 }
+
+// ---------- 报告合并边界用例（A3 补强） ----------
+
+test "summarize 空数组返回全 0" {
+  let sum = summarize([])
+  assert_eq(sum.total, 0)
+  assert_eq(sum.usable, 0)
+  assert_eq(sum.unhealthy, 0)
+  assert_eq(sum.docs_failed_total, 0)
+}
+
+test "summarize 仅累加有文档的失败块" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 2, 0, true)
+  let b = @orchestrate.make_health_report("c/d", "Verified", "", "✅", true, 0, 0, false)
+  let c = @orchestrate.make_health_report("e/f", "Verified", "", "✅", true, 1, 3, true)
+  let sum = summarize([a, b, c])
+  assert_eq(sum.docs_failed_total, 3)
+  assert_eq(sum.total, 3)
+}
+
+test "render_markdown 无文档列显示横杠" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 0, 0, false)
+  let md = render_markdown([a], "报告")
+  assert_true(md.contains("| — |"))
+}
+
+test "render_markdown 有文档列显示通过/失败缩写" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 3, 1, true)
+  let md = render_markdown([a], "报告")
+  assert_true(md.contains("| 3过/1失 |"))
+}
+
+test "render_markdown 空数组" {
+  let md = render_markdown([], "空报告")
+  assert_true(md.contains("**统计**：0 个对象，0 个可用，0 个不健康"))
+}
+
+test "render_markdown 多个对象逐行渲染" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 2, 0, true)
+  let b = @orchestrate.make_health_report("c/d", "NoManifest", "", "❌", false, 0, 0, false)
+  let md = render_markdown([a, b], "报告")
+  assert_true(md.contains("| a/b |"))
+  assert_true(md.contains("| c/d |"))
+  assert_true(md.contains("1 个可用，1 个不健康"))
+}
+
+test "render_json 多对象以逗号分隔" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 2, 0, true)
+  let b = @orchestrate.make_health_report("c/d", "NoManifest", "", "❌", false, 0, 0, false)
+  let j = render_json([a, b])
+  assert_true(j.contains("}, {"))
+  assert_true(j.has_prefix("["))
+  assert_true(j.has_suffix("]"))
+}
