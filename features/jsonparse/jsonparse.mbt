@@ -26,7 +26,7 @@ pub enum JsonValue {
 
 ///|
 /// 递归下降解析器的内部状态：输入文本 + 当前读取位置。
-struct Parser {
+priv struct Parser {
   s : String;
   mut pos : Int;
 }
