@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: MoonHealth 文档
+    url: https://github.com/Duckweed-yhb/moon-health-platform
+    about: 先查阅项目 README 与 docs/ 目录，常见问题多已有说明

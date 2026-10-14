@@ -10,6 +10,10 @@
 - `--moonproof` 接入 `--out JSON` 严格解析：新增 `features/jsonparse`（最小但严格的 JSON 解析器，纯计算、四后端可移植），`run_moonproof` 改为追加 `--out <临时 JSON>` 并解析 MoonProof 报告数组，汇总每个文档块的通过 / 失败 / 总数，文档验证输出真实数字。
 - 工程文档：CHANGELOG / CONTRIBUTING / ROADMAP / AI 使用说明。
 - 测试补强：编排合并逻辑边界用例（`healthy` 真值表、`render_health` 分支、`render_markdown` 无文档/有文档/多对象/空数组、`summarize` 空数组与失败块累加、`to_json` 包不可用字段、`escape` Unicode），测试数 18 → 34。
+- 生态普查：`survey --registry` 对 mooncakes **48 个真实发布包**实测，可用率 27.1%（13/48），报告见 `docs/ecosystem-survey-2026-10.md`（对比 2026-09 的 18 包基线 16.7%）。
+- 开源治理：新增 `CODE_OF_CONDUCT`、`ISSUE_TEMPLATE`（bug / feature / config）、`PULL_REQUEST_TEMPLATE`、`SECURITY`、`docs/RELEASING`。
+- 对标实证：并跑 `Tino-hue/depsight`（生态依赖健康工具，输出 0–100 健康分）与 MoonHive 对 8 个代表发布包打分对比，验证「depsight 健康分高 ≠ 本机可编译」的互补定位——yacc / base64 在 depsight 拿 98 / 96 分却在本机工具链上编译不过，见 `docs/ecosystem-survey-2026-10.md`。
+- 联动 `moon-hive` 上游修复：proc 层实现真正的进程级超时（fetch 挂起不再永久卡死，实测 mooncrypt 2.4s 归 ToolchainMismatch、mooncry 40.8s 归 TimedOut）。修复位于 moon-hive 源码仓库，`moon-health-platform` 的 moon-hive@0.2.4 依赖副本待上游发布后升级。
 
 ### Known Issues
 

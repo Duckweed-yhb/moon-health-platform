@@ -152,6 +152,18 @@ moon test --target native         # 运行全部测试（当前 34 个）
 
 持续集成见 `.github/workflows/`，覆盖检查、构建、测试流程。
 
+## 实测生态数据（2026-10）
+
+用 `survey --registry` 对 mooncakes.io **48 个真实发布包**做了一次生态普查（验证用户 `moon add` 真正装到的版本）：
+
+- **可用率 27.1%**（13/48 可直接用）；48 个全部在限时内完成验证（原始 2 个 fetch 挂起已随 moon-hive 超时修复解决）
+- 结论分布：Verified 13 · NoManifest 14 · Unsafe 9 · DoesNotCompile 6 · ToolchainMismatch 3 · TestFailing 2 · TimedOut 1
+- 对比 2026-09 的 18 包基线（16.7%），样本扩大约 2.7 倍
+
+> 关键发现：约三成包可直接用，大量小工具包（JSON/编码类）发布结构缺清单（NoManifest），3 例工具链版本漂移被归因引擎正确判别。这正说明"生态成熟度"是采用 MoonBit 前必须评估的风险项，也是本平台的价值所在。
+
+完整数据见 [docs/ecosystem-survey-2026-10.md](./docs/ecosystem-survey-2026-10.md)。
+
 ## 工程文档
 
 - [CHANGELOG](./CHANGELOG.md) — 版本变更记录
