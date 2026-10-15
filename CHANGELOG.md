@@ -14,6 +14,7 @@
 - 开源治理：新增 `CODE_OF_CONDUCT`、`ISSUE_TEMPLATE`（bug / feature / config）、`PULL_REQUEST_TEMPLATE`、`SECURITY`、`docs/RELEASING`。
 - 对标实证：并跑 `Tino-hue/depsight`（生态依赖健康工具，输出 0–100 健康分）与 MoonHive 对 8 个代表发布包打分对比，验证「depsight 健康分高 ≠ 本机可编译」的互补定位——yacc / base64 在 depsight 拿 98 / 96 分却在本机工具链上编译不过，见 `docs/ecosystem-survey-2026-10.md`。
 - 联动 `moon-hive` 上游修复：proc 层实现真正的进程级超时（fetch 挂起不再永久卡死，实测 mooncrypt 2.4s 归 ToolchainMismatch、mooncry 40.8s 归 TimedOut）。修复位于 moon-hive 源码仓库，`moon-health-platform` 的 moon-hive@0.2.4 依赖副本待上游发布后升级。
+- 评审叙事与可持续性：`docs/ecosystem-survey-2026-10.md` 补「结论与评审意义」（把 48 包普查提炼为评审洞察：生态问题真实有规模、静态健康分不足以支撑决策、平台填补统一健康信号空白）；README 新增「项目可持续性」章节（依赖锁定、验证后端可解耦、平台能力独立演进、开源治理）；ROADMAP 更新演进原则与完成状态。
 
 ### Known Issues
 
