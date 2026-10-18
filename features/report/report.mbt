@@ -166,3 +166,94 @@ test "render_json 多对象以逗号分隔" {
   assert_true(j.has_prefix("["))
   assert_true(j.has_suffix("]"))
 }
+
+// ---------- 边界补强：空输入 / 多对象 / 极端数据 ----------
+
+test "render_markdown 空数组以标题开头" {
+  let md = render_markdown([], "空标题")
+  assert_true(md.has_prefix("# 空标题"))
+  assert_true(md.contains("| 对象 | 归因 |"))
+}
+
+test "render_markdown 三个混合对象逐行渲染且统计累加" {
+  let a = @orchestrate.make_health_report("a/b", "Verified", "", "✅", true, 5, 0, true)
+  let b = @orchestrate.make_health_report("c/d", "Unsafe", "", "🔒", false, 0, 0, false)
+  let c = @orchestrate.make_health_report("e/f", "Verified", "", "✅", true, 3, 2, true)
+  let md = render_markdown([a, b, c], "混合")
+  assert_true(md.contains("| a/b |"))
+  assert_true(md.contains("| c/d |"))
+  assert_true(md.contains("| e/f |"))
+  // total=3, usable=2 (a/c 可用), unhealthy=2 (b/c 不健康), docs_failed_total=2
+  assert_true(md.contains("3 个对象，2 个可用，2 个不健康"))
+  let sum = summarize([a, b, c])
+  assert_eq(sum.docs_failed_total, 2)
+}
+
+test "空字符串 subject 原样出现在单元格" {
+  let a = @orchestrate.make_health_report("", "Verified", "", "✅", true, 0, 0, false)
+  let md = render_markdown([a], "T")
+  // subject 为空 → 该行第一格为空，第二格形如 "| ✅ Verified |"
+  assert_true(md.contains("|  | ✅ Verified"))
+}
+
+test "超长 subject（200 字符）原样渲染" {
+  let long_subj = "x".repeat(200)
+  let a = @orchestrate.make_health_report(long_subj, "Verified", "", "✅", true, 0, 0, false)
+  let md = render_markdown([a], "T")
+  assert_true(md.contains(long_subj))
+}
+
+test "0 与极大文档计数渲染与统计" {
+  let a = @orchestrate.make_health_report("p/q", "Verified", "", "✅", true, 0, 0, true)
+  let b = @orchestrate.make_health_report("r/s", "Verified", "", "✅", true, 123456789, 987654321, true)
+  let md = render_markdown([a, b], "T")
+  assert_true(md.contains("| 0过/0失 |"))
+  assert_true(md.contains("| 123456789过/987654321失 |"))
+  let sum = summarize([a, b])
+  assert_eq(sum.docs_failed_total, 987654321)
+}
+
+test "usable=false 可用列渲染 ❌" {
+  let a = @orchestrate.make_health_report("p/q", "NoManifest", "", "❌", false, 0, 0, false)
+  let md = render_markdown([a], "T")
+  // 可用列与健康列都应为 ❌
+  assert_true(md.contains("| ❌ | — | ❌ |"))
+}
+
+// ---------- 边界补强：表格竖线/换行转义（现状刻画，附 bug 记录） ----------
+
+// 已知问题（仅记录，不改源码）：render_markdown 未对 subject 单元格做
+// Markdown 转义，单元格内含 '|' 会破坏表格列数；含 '\n' 会直接折断表格行。
+// 以下用例先刻画"当前未转义"的真实行为，保证基线稳定，待源码补转义后再升级断言。
+test "现状刻画：单元格内含竖线 | 原样输出（未转义，已知 bug）" {
+  let a = @orchestrate.make_health_report("a|b", "Verified", "", "✅", true, 0, 0, false)
+  let md = render_markdown([a], "T")
+  // 当前实现直接拼接原始 subject
+  assert_true(md.contains("| a|b |"))
+}
+
+test "现状刻画：单元格内含换行符原样输出（未转义，已知 bug）" {
+  let a = @orchestrate.make_health_report("a\nb", "Verified", "", "✅", true, 0, 0, false)
+  let md = render_markdown([a], "T")
+  // 当前实现不转义换行，原始 subject 中的 \n 会直接出现在输出里
+  assert_true(md.contains("a\nb"))
+}
+
+// ---------- 边界补强：render_json 字段完备性 ----------
+
+test "render_json 包含布尔与数字字段" {
+  let a = @orchestrate.make_health_report("p/q", "Unsafe", "含 FFI", "🔒", false, 0, 3, false)
+  let j = render_json([a])
+  assert_true(j.contains("\"usable\":false"))
+  assert_true(j.contains("\"has_docs\":false"))
+  assert_true(j.contains("\"healthy\":false"))
+  assert_true(j.contains("\"docs_passed\":0"))
+  assert_true(j.contains("\"docs_failed\":3"))
+}
+
+test "render_json 中 verdict_explain 的引号被转义" {
+  let a = @orchestrate.make_health_report("p/q", "Verified", "say \"hi\"", "✅", true, 1, 0, true)
+  let j = render_json([a])
+  // orchestrate.escape 只转引号与反斜杠
+  assert_true(j.contains("\"verdict_explain\":\"say \\\"hi\\\"\""))
+}

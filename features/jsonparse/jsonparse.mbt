@@ -426,3 +426,247 @@ test "field 对非对象返回 None" {
     _ => fail("expected None")
   }
 }
+
+// ---------- 边界补强：深层嵌套 ----------
+
+test "深层嵌套数组与对象可解析并取值" {
+  let t = "[[[1, 2], [3, {\"a\": [4, {\"b\": 5}]}]]]"
+  match parse(t) {
+    Ok(JsonArray(rows)) => {
+      // 最外层只有一个元素
+      assert_eq(rows.length(), 1)
+      // 深入到 {"a": [4, {"b": 5}]} 里取 b
+      let inner = rows[0]
+      match inner {
+        JsonArray(innerRows) => {
+          assert_eq(innerRows.length(), 2)
+          match innerRows[1] {
+            JsonArray(kv) => match kv[1] {
+              JsonObject(fields) => {
+                let av = field(JsonObject(fields), "a").unwrap()
+                match av {
+                  JsonArray(arr) => match arr[1] {
+                    JsonObject(bf) => assert_eq(
+                      int_of(field(JsonObject(bf), "b").unwrap()).unwrap(),
+                      5,
+                    )
+                    _ => fail("expected object for b")
+                  }
+                  _ => fail("expected array for a")
+                }
+              }
+              _ => fail("expected object")
+            }
+            _ => fail("expected array")
+          }
+        }
+        _ => fail("expected inner array")
+      }
+    }
+    _ => fail("expected array")
+  }
+}
+
+test "前导/后置空白被忽略" {
+  match parse("   { \"k\" : [ 1 , 2 ] }   ") {
+    Ok(JsonObject(fields)) => {
+      match field(JsonObject(fields), "k").unwrap() {
+        JsonArray(arr) => {
+          assert_eq(int_of(arr[0]).unwrap(), 1)
+          assert_eq(int_of(arr[1]).unwrap(), 2)
+        }
+        _ => fail("expected array")
+      }
+    }
+    _ => fail("expected object")
+  }
+}
+
+test "顶层布尔与 null 字面量" {
+  match parse("[true, false, null]") {
+    Ok(JsonArray(arr)) => {
+      match arr[0] {
+        JsonBool(b) => assert_eq(b, true)
+        _ => fail("expected bool true")
+      }
+      match arr[1] {
+        JsonBool(b) => assert_eq(b, false)
+        _ => fail("expected bool false")
+      }
+      match arr[2] {
+        JsonNull => assert_true(true)
+        _ => fail("expected null")
+      }
+    }
+    _ => fail("expected array")
+  }
+}
+
+// ---------- 边界补强：字符串转义 ----------
+
+test "转义全集 \\n \\t \\r \\b \\f \\/" {
+  match parse("{\"a\": \"\\n\\t\\r\\u0008\\u000c\\/\"}") {
+    Ok(JsonObject(fields)) => match fields[0] {
+      (_, JsonString(s)) => assert_eq(s, "\n\t\r\u{08}\u{0C}/")
+      _ => fail("expected string")
+    }
+    _ => fail("expected object")
+  }
+}
+
+test "代理对 \\uD83D\\uDE00 不报错且产出 2 个码元" {
+  // 注：解析器逐 \u 写码点，未做代理对合并；此处只断言不报错、长度为 2
+  match parse("\"\\uD83D\\uDE00\"") {
+    Ok(JsonString(s)) => assert_eq(s.length(), 2)
+    Ok(_) => fail("expected string")
+    Err(e) => fail("surrogate pair should parse, got: " + e)
+  }
+}
+
+test "非法 \\u 转义：长度不足" {
+  match parse("\"\\u12\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "非法 \\u 转义：首位字符非十六进制" {
+  match parse("\"\\uG000\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+// 已知 bug（仅记录，不改源码）：hex4_of 对非十六进制返回 -1，但 cp 是各 nibble
+// 加权求和，仅当高位 nibble 为非十六进制时总和才 < 0。因此 "\u12g4"（非高位 nibble
+// 非法）当前不报错，而是静默产出 U+11F4。下面用例刻画该现状。
+test "现状刻画：非高位 \\u 非法字符被静默接受（已知 bug）" {
+  match parse("\"\\u12g4\"") {
+    Ok(JsonString(s)) => assert_eq(s.length(), 1)
+    Ok(_) => fail("expected string")
+    Err(e) => fail("current impl should accept, got: " + e)
+  }
+}
+
+test "未知转义序列 \\\\a" {
+  match parse("\"\\a\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "反斜杠出现在字符串末尾（转义不完整）" {
+  match parse("\"abc\\") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "未闭合字符串" {
+  match parse("\"abc") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+// ---------- 边界补强：非法/残缺输入 ----------
+
+test "尾随逗号：数组 [1,]" {
+  match parse("[1,]") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "尾随逗号：对象 {\"a\":1,}" {
+  match parse("{\"a\":1,}") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "缺失右花括号" {
+  match parse("{\"a\":1") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "缺失右方括号" {
+  match parse("[1,2") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "裸值非数字开头（hello）" {
+  match parse("hello") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "字面量后多余字符（truex）" {
+  match parse("truex") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "空输入" {
+  match parse("") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+// ---------- 边界补强：字段缺失 / 类型不符 ----------
+
+test "字段缺失返回 None，int_of 亦为 None" {
+  match parse("{\"a\": 1}") {
+    Ok(obj) => {
+      match field(obj, "missing") {
+        None => assert_true(true)
+        _ => fail("expected None")
+      }
+      match int_of(field(obj, "missing").unwrap_or(JsonNull)) {
+        None => assert_true(true)
+        _ => fail("expected None")
+      }
+    }
+    _ => fail("expected object")
+  }
+}
+
+test "类型不符：期望整数处给字符串/布尔" {
+  match parse("{\"a\": \"123\", \"b\": true}") {
+    Ok(obj) => {
+      // 字符串虽然长得像整数，int_of 必须返回 None
+      assert_eq(int_of(field(obj, "a").unwrap()), None)
+      assert_eq(int_of(field(obj, "b").unwrap()), None)
+    }
+    _ => fail("expected object")
+  }
+}
+
+test "int_of 对带指数/小数点数字返回 None" {
+  match parse("1e3") {
+    Ok(v) => assert_eq(int_of(v), None)
+    _ => fail("expected number")
+  }
+  match parse("-0.5") {
+    Ok(v) => assert_eq(int_of(v), None)
+    _ => fail("expected number")
+  }
+}
+
+test "int_of 解析负整数与多位正整数" {
+  match parse("-2026") {
+    Ok(v) => assert_eq(int_of(v).unwrap(), -2026)
+    _ => fail("expected number")
+  }
+  match parse("48") {
+    Ok(v) => assert_eq(int_of(v).unwrap(), 48)
+    _ => fail("expected number")
+  }
+}
