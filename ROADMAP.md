@@ -9,6 +9,7 @@
 - [x] `--moonproof` 接入 `--out JSON` 严格解析（文档验证输出真实数字）
 - [x] 工程文档：CHANGELOG / CONTRIBUTING / ROADMAP / AI 使用说明
 - [x] 生态普查报告：`docs/ecosystem-survey-2026-10.md`（48 包普查 + depsight 对标 + 结论与评审意义）
+- [x] 平台自身 `survey` 子命令：复用 moon-hive survey，`--registry` 走 mooncakes（不依赖 GitHub），可输出 Markdown / JSON 报告——平台可自产生态普查
 - [ ] 平台自身 `check` 批量样例报告（对一批真实包用 moonhealth CLI 跑 `check`，沉淀可复现报告）
 - [x] 补测试：编排合并逻辑（`healthy` 判定、`has_docs` 分支）的边界用例（测试 18 → 34）
 

@@ -24,6 +24,7 @@ import {
   "Duckweed/moon-hive/verify/check" @check,
   "Duckweed/moon-hive/verify/gitsource" @gitsource,
   "Duckweed/moon-hive/verify/workspace" @workspace,
+  "Duckweed/moon-hive/features/survey" @survey,
   "Duckweed/moon-hive/platform/proc" @proc,
   "Duckweed/moon-hive/platform/fs" @fs,
   "Duckweed/moon-health-platform/features/orchestrate" @orchestrate,

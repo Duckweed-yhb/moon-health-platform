@@ -5,6 +5,7 @@
 ///
 /// 命令:
 ///   check [--moonproof <cmd>] <候选>...   生态健康检查（归因 + 可选文档验证）
+///   survey [--registry] <候选>...         批量生态普查（复用 moon-hive survey）
 ///   doctor                                 检查平台运行环境
 ///   version                                打印版本
 ///   help                                   打印本帮助
@@ -41,6 +42,7 @@ fn main {
   }
   match cmd {
     "check" => cmd_check(rest)
+    "survey" => cmd_survey(rest)
     "doctor" => cmd_doctor()
     "version" | "--version" | "-V" => println(version_line())
     "help" | "--help" | "-h" => print_usage()
@@ -183,6 +185,71 @@ fn cmd_check(args : Array[String]) -> Unit {
 }
 
 ///|
+/// survey 命令：moonhealth survey [--registry] [--out-md <路径>] [--out-json <路径>] <候选>...
+///
+/// 复用 moon-hive 的 features/survey 做批量生态普查，产出可复现报告。
+///   --registry：从 mooncakes 注册表验证发布版本（不依赖 GitHub 克隆），
+///               适合在 GitHub 不可达的环境产出生态报告；
+///   --out-md / --out-json：把 Markdown / JSON 报告写盘（空串不写）。
+fn cmd_survey(args : Array[String]) -> Unit {
+  let mut registry = false
+  let mut md_path = ""
+  let mut json_path = ""
+  let slugs : Array[String] = []
+  let mut i = 0
+  while i < args.length() {
+    let a = args[i]
+    if a == "--registry" {
+      registry = true
+      i = i + 1
+    } else if a == "--out-md" && i + 1 < args.length() {
+      md_path = args[i + 1]
+      i = i + 2
+    } else if a.has_prefix("--out-md=") {
+      md_path = a[9:].to_owned()
+      i = i + 1
+    } else if a == "--out-json" && i + 1 < args.length() {
+      json_path = args[i + 1]
+      i = i + 2
+    } else if a.has_prefix("--out-json=") {
+      json_path = a[11:].to_owned()
+      i = i + 1
+    } else {
+      slugs.push(a)
+      i = i + 1
+    }
+  }
+  if slugs.length() == 0 {
+    println("用法: moonhealth survey [--registry] [--out-md <路径>] [--out-json <路径>] <候选>...")
+    println("")
+    println("示例: moonhealth survey --registry moonbitlang/jsonl bobzhang/toml")
+    println("      moonhealth survey --registry --out-md report.md --out-json report.json <候选>...")
+    @proc.exit_with(14)
+    return
+  }
+  let candidates : Array[@gitsource.Candidate] = []
+  for s in slugs {
+    match @gitsource.from_slug(s) {
+      Ok(c) => candidates.push(c)
+      Err(_) => println("跳过无效候选: " + s)
+    }
+  }
+  if candidates.length() == 0 {
+    println("没有可验证的候选")
+    @proc.exit_with(14)
+    return
+  }
+  let opt : @survey.SurveyOptions = {
+    ..@survey.default_options(),
+    registry: registry,
+    md_path: md_path,
+    json_path: json_path,
+  }
+  let (_report, code) = @survey.run(candidates, opt)
+  @proc.exit_with(code)
+}
+
+///|
 /// 解析候选：本地目录或 owner/repo。
 ///
 /// 本地目录用 moon-hive 的 from_local（内部以 fs.is_dir 做真实存在性判断，
@@ -319,12 +386,15 @@ fn print_usage() -> Unit {
   println("命令:")
   println("  check [--moonproof <cmd>] <候选>...")
   println("                                  生态健康检查：归因 + 可选文档验证")
+  println("  survey [--registry] [--out-md <p>] [--out-json <p>] <候选>...")
+  println("                                  批量生态普查（复用 moon-hive survey）")
   println("  doctor                          检查平台运行环境（moon / git / 临时目录）")
   println("  version                         打印版本")
   println("  help                            打印本帮助")
   println("")
   println("候选写法: owner/repo | https://github.com/owner/repo | 本地目录路径")
   println("--moonproof: 注入 MoonProof CLI 命令模板，对本地候选做文档示例验证")
+  println("--registry : survey 从 mooncakes 注册表验证（不依赖 GitHub 克隆）")
   println("")
   println("退出码: 0 全部健康 | 1 有失败 | 2 运行/参数错误 | 10 环境错误 | 14 参数错误")
 }

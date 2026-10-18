@@ -50,12 +50,15 @@ moonhealth <命令> [参数...]
 
 命令:
   check [--moonproof <cmd>] <候选>...   生态健康检查（归因 + 可选文档验证）
+  survey [--registry] <候选>...         批量生态普查（复用 moon-hive survey，可输出报告）
   doctor                                  检查平台运行环境（moon / git / 临时目录）
   version                                 打印版本
   help                                    打印本帮助
 ```
 
 **候选写法**：`owner/repo` | `https://github.com/owner/repo` | 本地目录路径
+
+`survey` 额外支持：`--registry`（从 mooncakes 注册表验证发布版本，不依赖 GitHub 克隆）、`--out-md <路径>` / `--out-json <路径>`（把 Markdown / JSON 报告写盘）。
 
 ### 示例
 
@@ -71,6 +74,9 @@ moon run Duckweed/moon-health-platform/cmd/moonhealth -- check ./local-pkg --moo
 
 # 检查运行环境
 moon run Duckweed/moon-health-platform/cmd/moonhealth -- doctor
+
+# 从 mooncakes 注册表批量普查（不依赖 GitHub，可输出 Markdown/JSON 报告）
+moon run Duckweed/moon-health-platform/cmd/moonhealth -- survey --registry moonbitlang/jsonl bobzhang/toml --out-md report.md --out-json report.json
 ```
 
 ### 输出
@@ -162,7 +168,9 @@ moon test --target native         # 运行全部测试（当前 34 个）
 
 > 关键发现：约三成包可直接用，大量小工具包（JSON/编码类）发布结构缺清单（NoManifest），3 例工具链版本漂移被归因引擎正确判别。这正说明"生态成熟度"是采用 MoonBit 前必须评估的风险项，也是本平台的价值所在。
 
-完整数据见 [docs/ecosystem-survey-2026-10.md](./docs/ecosystem-survey-2026-10.md)。
+> 工具链演进实证：上述结论绑定 2026-09-20 工具链。用平台自身的 `survey --registry` 在 2026-10-12 工具链复测，`gmlewis/base64` 由 DoesNotCompile 变为 Verified——同一包在不同工具链下结论会变化。这正说明"能不能用"必须绑定工具链版本、用真实工具链验证，而非给一次性结论；也是本平台作为"健康信号"工具的核心价值。
+
+完整数据见 [docs/ecosystem-survey-2026-10.md](./docs/ecosystem-survey-2026-10.md)。平台自身也可用 `moonhealth survey --registry` 复现此类普查。
 
 ## 项目可持续性
 
