@@ -17,6 +17,11 @@
 - 评审叙事与可持续性：`docs/ecosystem-survey-2026-10.md` 补「结论与评审意义」（把 48 包普查提炼为评审洞察：生态问题真实有规模、静态健康分不足以支撑决策、平台填补统一健康信号空白）；README 新增「项目可持续性」章节（依赖锁定、验证后端可解耦、平台能力独立演进、开源治理）；ROADMAP 更新演进原则与完成状态。
 - 平台 `survey` 子命令：复用 moon-hive `features/survey` 做批量生态普查，`--registry` 从 mooncakes 注册表验证发布版本（不依赖 GitHub 克隆），支持 `--out-md` / `--out-json` 输出报告——平台可自产生态普查报告。实测在 2026-10-12 工具链下 `gmlewis/base64` 由 DoesNotCompile 变为 Verified，印证"结论绑定工具链版本"的平台价值。
 
+### Fixed
+
+- `features/jsonparse`：`\uXXXX` 逐 nibble 校验，任一非十六进制即报错（修复 `\u12g4` 被静默接受）；代理对合并（`\uD83D\uDE00` 合并为单个补充字符，孤立/错配代理报错）。
+- `features/report`：`render_markdown` 表格单元格转义（竖线 `\|`、换行替换为空格），修复单元格含 `|`/换行破坏表格结构与列数的问题。
+
 ### Known Issues
 
 - 本地在含中文的目录跑 native 测试可能触发 gcc 汇编器无法生成 `.obj` 的中文路径编码问题；可用 `moon test --target wasm-gc` 验证纯计算模块（CI 在无中文路径无此问题）。

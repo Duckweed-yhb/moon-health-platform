@@ -241,16 +241,10 @@ fn parse_string(p : Parser) -> Result[String, String] {
         b.write_char('\t')
         p.pos = p.pos + 1
       } else if e == 'u' {
-        if p.pos + 4 >= p.s.length() {
-          return Err("\\u 转义长度不足")
+        match append_unicode(b, p) {
+          Ok(_) => ()
+          Err(msg) => return Err(msg)
         }
-        let cp = hex4_of(p.s[p.pos + 1]) * 4096 + hex4_of(p.s[p.pos + 2]) * 256 +
-          hex4_of(p.s[p.pos + 3]) * 16 + hex4_of(p.s[p.pos + 4])
-        if cp < 0 {
-          return Err("\\u 转义含非十六进制字符")
-        }
-        b.write_char(cp.unsafe_to_char())
-        p.pos = p.pos + 5
       } else {
         return Err("未知转义序列")
       }
@@ -273,6 +267,54 @@ fn hex4_of(c : UInt16) -> Int {
     n - 0x41 + 10
   } else {
     -1
+  }
+}
+
+///|
+/// 处理 `\uXXXX` 转义并写入 StringBuilder，含代理对合并。
+/// 前置：p.pos 指向 `u`；hex nibbles 位于 p.pos+1 .. p.pos+4。
+/// 成功时推进 p.pos；非法输入返回 Err（不推进）。
+fn append_unicode(b : StringBuilder, p : Parser) -> Result[Int, String] {
+  if p.pos + 4 >= p.s.length() {
+    return Err("\\u 转义长度不足")
+  }
+  let h1 = hex4_of(p.s[p.pos + 1])
+  let h2 = hex4_of(p.s[p.pos + 2])
+  let h3 = hex4_of(p.s[p.pos + 3])
+  let h4 = hex4_of(p.s[p.pos + 4])
+  if h1 < 0 || h2 < 0 || h3 < 0 || h4 < 0 {
+    return Err("\\u 转义含非十六进制字符")
+  }
+  let cp = h1 * 4096 + h2 * 256 + h3 * 16 + h4
+  if cp >= 0xD800 && cp <= 0xDBFF {
+    // 高位代理：必须后随 \uXXXX 低位代理，合并为补充平面字符
+    if p.pos + 10 >= p.s.length() {
+      return Err("高位代理后缺少低位代理")
+    }
+    if p.s[p.pos + 5] == '\\' && p.s[p.pos + 6] == 'u' {
+      let l1 = hex4_of(p.s[p.pos + 7])
+      let l2 = hex4_of(p.s[p.pos + 8])
+      let l3 = hex4_of(p.s[p.pos + 9])
+      let l4 = hex4_of(p.s[p.pos + 10])
+      if l1 < 0 || l2 < 0 || l3 < 0 || l4 < 0 {
+        return Err("低位代理含非十六进制字符")
+      }
+      let low = l1 * 4096 + l2 * 256 + l3 * 16 + l4
+      if low >= 0xDC00 && low <= 0xDFFF {
+        let combined = 0x10000 + (cp - 0xD800) * 0x400 + (low - 0xDC00)
+        b.write_char(combined.unsafe_to_char())
+        p.pos = p.pos + 11
+        return Ok(0)
+      }
+      return Err("高位代理后未跟随低位代理")
+    }
+    return Err("高位代理后未跟随 \\u 转义")
+  } else if cp >= 0xDC00 && cp <= 0xDFFF {
+    return Err("孤立低位代理")
+  } else {
+    b.write_char(cp.unsafe_to_char())
+    p.pos = p.pos + 5
+    return Ok(0)
   }
 }
 
@@ -514,12 +556,31 @@ test "转义全集 \\n \\t \\r \\b \\f \\/" {
   }
 }
 
-test "代理对 \\uD83D\\uDE00 不报错且产出 2 个码元" {
-  // 注：解析器逐 \u 写码点，未做代理对合并；此处只断言不报错、长度为 2
+test "代理对 \\uD83D\\uDE00 合并为单个补充字符" {
   match parse("\"\\uD83D\\uDE00\"") {
-    Ok(JsonString(s)) => assert_eq(s.length(), 2)
-    Ok(_) => fail("expected string")
-    Err(e) => fail("surrogate pair should parse, got: " + e)
+    Ok(JsonString(s)) => assert_eq(s, "\u{1F600}")
+    _ => fail("expected string")
+  }
+}
+
+test "孤立高位代理报错" {
+  match parse("\"\\uD83D\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "孤立低位代理报错" {
+  match parse("\"\\uDE00\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
+  }
+}
+
+test "高位代理后非低位代理报错" {
+  match parse("\"\\uD83D\\u0041\"") {
+    Err(_) => assert_true(true)
+    _ => fail("should error")
   }
 }
 
@@ -537,14 +598,10 @@ test "非法 \\u 转义：首位字符非十六进制" {
   }
 }
 
-// 已知 bug（仅记录，不改源码）：hex4_of 对非十六进制返回 -1，但 cp 是各 nibble
-// 加权求和，仅当高位 nibble 为非十六进制时总和才 < 0。因此 "\u12g4"（非高位 nibble
-// 非法）当前不报错，而是静默产出 U+11F4。下面用例刻画该现状。
-test "现状刻画：非高位 \\u 非法字符被静默接受（已知 bug）" {
+test "非法 \\u：非高位非十六进制也报错" {
   match parse("\"\\u12g4\"") {
-    Ok(JsonString(s)) => assert_eq(s.length(), 1)
-    Ok(_) => fail("expected string")
-    Err(e) => fail("current impl should accept, got: " + e)
+    Err(_) => assert_true(true)
+    _ => fail("should error")
   }
 }
 

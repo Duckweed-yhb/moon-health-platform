@@ -39,13 +39,30 @@ pub fn summarize(reports : Array[@orchestrate.HealthReport]) -> HealthSummary {
 
 ///|
 /// 渲染为 Markdown 报告。
+///|
+/// 转义 Markdown 表格单元格：竖线 -> `\|`，换行 -> 空格（避免破坏表格结构与列数）。
+fn escape_cell(s : String) -> String {
+  let b = StringBuilder()
+  for c in s {
+    if c == '|' {
+      b.write_string("\\|")
+    } else if c == '\n' {
+      b.write_string(" ")
+    } else {
+      b.write_char(c)
+    }
+  }
+  b.to_string()
+}
+
+///|
 pub fn render_markdown(reports : Array[@orchestrate.HealthReport], title : String) -> String {
   let s = StringBuilder()
   s.write_string("# " + title + "\n\n")
   s.write_string("| 对象 | 归因 | 可用 | 文档 | 健康 |\n")
   s.write_string("|---|---|---|---|---|\n")
   for r in reports {
-    s.write_string("| " + r.subject + " | " + r.verdict_mark + " " + r.verdict + " | ")
+    s.write_string("| " + escape_cell(r.subject) + " | " + escape_cell(r.verdict_mark) + " " + escape_cell(r.verdict) + " | ")
     s.write_string(if r.usable { "✅" } else { "❌" })
     s.write_string(" | ")
     s.write_string(if r.has_docs {
@@ -222,21 +239,19 @@ test "usable=false 可用列渲染 ❌" {
 
 // ---------- 边界补强：表格竖线/换行转义（现状刻画，附 bug 记录） ----------
 
-// 已知问题（仅记录，不改源码）：render_markdown 未对 subject 单元格做
-// Markdown 转义，单元格内含 '|' 会破坏表格列数；含 '\n' 会直接折断表格行。
-// 以下用例先刻画"当前未转义"的真实行为，保证基线稳定，待源码补转义后再升级断言。
-test "现状刻画：单元格内含竖线 | 原样输出（未转义，已知 bug）" {
+// 表格单元格转义（修复后行为）：竖线 -> \|，换行 -> 空格。
+test "单元格内含竖线转义为 \\|" {
   let a = @orchestrate.make_health_report("a|b", "Verified", "", "✅", true, 0, 0, false)
   let md = render_markdown([a], "T")
-  // 当前实现直接拼接原始 subject
-  assert_true(md.contains("| a|b |"))
+  assert_true(md.contains("| a\\|b |"))
+  assert_false(md.contains("| a|b |"))
 }
 
-test "现状刻画：单元格内含换行符原样输出（未转义，已知 bug）" {
+test "单元格内含换行替换为空格" {
   let a = @orchestrate.make_health_report("a\nb", "Verified", "", "✅", true, 0, 0, false)
   let md = render_markdown([a], "T")
-  // 当前实现不转义换行，原始 subject 中的 \n 会直接出现在输出里
-  assert_true(md.contains("a\nb"))
+  assert_false(md.contains("a\nb"))
+  assert_true(md.contains("| a b |"))
 }
 
 // ---------- 边界补强：render_json 字段完备性 ----------
