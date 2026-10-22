@@ -35,6 +35,11 @@ jobs:
       - name: Test (native)
         run: moon test --target native
 
+      # 纯计算模块（jsonparse / report）在 wasm-gc 后端同样全绿，
+      # 验证「核心能力跨后端可移植、不依赖宿主 C FFI」的长期可持续性。
+      - name: Test (wasm-gc)
+        run: moon test --target wasm-gc
+
       # CLI 冒烟测试：doctor 依赖真实外网（git ls-remote）不适合当门禁，
       # 用 version 验证 CLI 可运行即可。
       - name: CLI smoke test - version
