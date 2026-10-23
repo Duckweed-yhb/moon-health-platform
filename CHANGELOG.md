@@ -28,6 +28,7 @@
 - `features/orchestrate`：`to_json` 的 `escape` 补全——转义换行/回车/制表符及 0x00–0x1F 控制字符、`verdict_mark` 转义，保证平台自产 JSON 始终合法；改用 StringBuilder，消除 O(n²) 拼接。
 - 退出码文档统一：`cmd/moonhealth` 帮助文本与头注释、`features/orchestrate` 头注释、README 退出码表四处对齐到实际使用的 0/1/10/12/14（移除未实际使用的 2/11/13/15 宣称）；`orchestrate` 头注释去除未实现的 `inspect`/`docs` 语义。
 - `features/orchestrate`：`make_health_report` 防御加固——`has_docs` 仅在 `docs_passed + docs_failed > 0`（实际产生文档验证结果）时才被认可，否则归一化为"无文档"。杜绝外部构造"声称验证过文档却无任何块"的造假输入，避免凭 0 失败当作文档全过而判健康；渲染不再谎称"0 通过 / 0 失败"。
+- 联动修复（外部仓库）：MoonProof `scan_ext` 的 `not_build` 增加 `.mooncakes` 排除（`70672a0`，避免把依赖副本当文档验证）；moon-hive `inspect` 退出码对齐 check/survey——全部可用才 0（`19fe572`）。`docs/moonproof-sample-2026-10.md` 相应把 `.mooncakes` 重复扫描项标注为已修复、原数据标注为修复前基线。
 
 ### Known Issues
 

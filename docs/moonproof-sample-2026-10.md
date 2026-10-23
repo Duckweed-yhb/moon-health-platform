@@ -97,7 +97,7 @@ MoonProof 扫描了 moon-hive 目录下 33 个 `.md` 文件，其中 6 个含 mo
 | `docs/examples/classify-demo/.mooncakes/.../docs/API.md` | 12 | 1 | 11 | 0 | compile-error ×11 |
 | **合计** | **42** | **3** | **39** | **0** | |
 
-> 注：后四组是 moon-hive `docs/examples/` 下 `.mooncakes/` 目录中嵌套的 moon-hive 源码副本，MoonProof 递归扫描时一并发现。内容与前两组完全相同（1 通过 + 11 失败 × 2 份，README 0 通过 + 2 失败 × 2 份）。
+> 注：后四组是 moon-hive `docs/examples/` 下 `.mooncakes/` 目录中嵌套的 moon-hive 源码副本，MoonProof 递归扫描时一并发现。内容与前两组完全相同（1 通过 + 11 失败 × 2 份，README 0 通过 + 2 失败 × 2 份）。**以上数据为修复前基线**——自 MoonProof `70672a0` 起 `scan_ext` 已排除 `.mooncakes`，此类重复副本不再被扫描（详见 §6）。
 
 ### 4.2 块级详情（主文档 `README.md` + `docs/API.md`）
 
@@ -153,13 +153,13 @@ MoonProof 扫描了 moon-hive 目录下 33 个 `.md` 文件，其中 6 个含 mo
 | 局限 | 影响 | 说明 |
 |---|---|---|
 | **中文路径编码问题** | 首次直接对 `E:\...\moon-hive`（含中文）运行时，平台 C FFI 子进程调用 MoonProof 后 JSON 读取/解析失败，显示"无文档需要验证"。复制到 ASCII 路径 `C:\Users\yhb\moonproof-run\moon-hive` 后正常。 | 根因：平台 `proc_run_capture`（C FFI）在 Windows 上传递含中文的命令字符串时编码丢失。这是已知限制，评审时应说明。 |
-| **MoonProof 递归扫描到 .mooncakes 副本** | 扫描出 33 个 `.md`，其中 4 组是 `docs/examples/` 下 `.mooncakes/` 内嵌的源码副本，导致 42 块中有 28 块是重复内容。 | MoonProof 的 `scan_ext` 排除 `_build`/`.git`/`node_modules`，但不排除 `.mooncakes`。后续可在 MoonProof 侧增加排除规则。 |
+| **MoonProof 递归扫描到 .mooncakes 副本**（已修复） | 修复前：扫描出 33 个 `.md`，其中 4 组是 `docs/examples/` 下 `.mooncakes/` 内嵌的源码副本，42 块中有 28 块是重复内容。 | 已于 MoonProof `70672a0` 修复：`scan_ext` 的 `not_build` 增加 `.mooncakes` 排除。修复后此类副本不再被扫描；本条数据为本演示的修复前基线。 |
 | **API.md 签名块失败属预期** | 11 个孤立函数签名失败不是因为代码写错，而是因为它们是"API 参考"而非可独立编译的完整程序。 | 这是文档形式的局限：纯签名展示在 MoonProof 模型下会失败。后续可支持 ` ```moonbit no-check ` 标注或文档专用的签名验证模式。 |
 | **GitHub 网络间歇不可达** | 本演示全部使用本地候选，不涉及远端 clone。 | 与 check-batch 报告一致。 |
 
 ### 6.2 后续方向
 
 - **中文路径修复**：在平台 `proc_run_capture` 的 C 代码中使用 UTF-8 → 系统 ANSI 转换（或直接用宽字符 API），消除中文路径下的编码丢失。
-- **`.mooncakes` 排除**：在 MoonProof `scan_ext` 的 `not_build` 中增加 `.mooncakes` 排除，避免扫描嵌套依赖副本。
+- **`.mooncakes` 排除**：✅ 已实现（MoonProof `70672a0`，`not_build` 增加 `.mooncakes` 排除）；重跑 `--moonproof` 可得到排除重复副本后的更干净数据。
 - **多候选对比**：本演示单候选；后续可对一批本地包跑 `--moonproof`，展示跨包的文档健康分布。
 - **`--dep` 注入**：MoonProof 支持 `--dep owner/name`，平台可透传，让文档示例 import 外部包时也能编译。
