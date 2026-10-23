@@ -25,6 +25,7 @@
 - `features/jsonparse`：`\uXXXX` 逐 nibble 校验，任一非十六进制即报错（修复 `\u12g4` 被静默接受）；代理对合并（`\uD83D\uDE00` 合并为单个补充字符，孤立/错配代理报错）。
 - `features/report`：`render_markdown` 表格单元格转义（竖线 `\|`、换行替换为空格），修复单元格含 `|`/换行破坏表格结构与列数的问题。
 - `features/orchestrate`：`to_json` 的 `escape` 补全——转义换行/回车/制表符及 0x00–0x1F 控制字符、`verdict_mark` 转义，保证平台自产 JSON 始终合法；改用 StringBuilder，消除 O(n²) 拼接。
+- 退出码文档统一：`cmd/moonhealth` 帮助文本与头注释、`features/orchestrate` 头注释、README 退出码表四处对齐到实际使用的 0/1/10/12/14（移除未实际使用的 2/11/13/15 宣称）；`orchestrate` 头注释去除未实现的 `inspect`/`docs` 语义。
 
 ### Known Issues
 

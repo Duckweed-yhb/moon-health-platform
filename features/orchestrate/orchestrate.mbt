@@ -10,18 +10,17 @@
 ///     避免把它的 C FFI 依赖图拖进平台模块。
 ///
 /// 语义：
-///   moonhealth check <owner/repo>           检查一个包的生态健康（归因 + 可选文档验证）
-///   moonhealth inspect <owner/repo>         只做包归因（调 moon-hive inspect）
-///   moonhealth docs <dir>                   只做文档验证（调 moon-proof）
-///   moonhealth survey <候选>...             生态普查（调 moon-hive survey）
-///   moonhealth doctor                       检查平台运行环境（moon/git/临时目录）
-///   moonhealth version                      打印版本
+///   moonhealth check [--moonproof <cmd>] <候选>...  生态健康检查（归因 + 可选文档验证）
+///   moonhealth survey [--registry] <候选>...       生态普查（调 moon-hive survey）
+///   moonhealth doctor                               检查平台运行环境（moon/git/临时目录）
+///   moonhealth version                              打印版本
 ///
-/// 退出码约定（与子工具对齐）：
-///   0  成功（全部健康 / 无失败）
-///   1  有失败（包不可用 / 文档失效）
-///   2  运行错误 / 参数错误
-///   10 环境错误   11 进程错误   12 文件错误   13 未找到   14 参数错误   15 工具链错误
+/// 退出码约定：
+///   0   成功（全部健康 / 无失败）
+///   1   有失败（包不可用 / 文档失效）
+///   10  环境错误（doctor 依赖缺失）
+///   12  文件 / 工作区错误（隔离工作区创建失败）
+///   14  参数错误（用法 / 参数错误）
 
 ///|
 /// 平台的统一健康结论：对一个检查对象，归因引擎 + 文档验证的合并结果。
