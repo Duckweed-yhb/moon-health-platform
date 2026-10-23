@@ -40,7 +40,22 @@ jobs:
       - name: Test (wasm-gc)
         run: moon test --target wasm-gc
 
-      # CLI 冒烟测试：doctor 依赖真实外网（git ls-remote）不适合当门禁，
-      # 用 version 验证 CLI 可运行即可。
-      - name: CLI smoke test - version
+      # CLI 冒烟与退出码契约门禁。
+      # - doctor 依赖真实外网（git ls-remote）不适合当门禁，用 version 验证 CLI 可运行；
+      # - demo 样例是平台自带的受控包（docs/check-samples），不依赖外网，可在 CI 稳定复现，
+      #   用作退出码契约（check 全健康→0、有失败→1）的硬门禁。
+      - name: CLI smoke test - version (exit 0)
         run: moon run cmd/moonhealth --target native -- version
+
+      - name: CLI smoke test - check demo_ok (exit 0)
+        run: moon run cmd/moonhealth --target native -- check docs/check-samples/demo_ok
+
+      # demo_fail 预期退出码 1（有失败）；捕获并断言，作为退出码契约门禁。
+      - name: CLI smoke test - check demo_fail (exit 1)
+        shell: bash
+        run: |
+          set +e
+          moon run cmd/moonhealth --target native -- check docs/check-samples/demo_fail >/dev/null 2>&1
+          code=$?
+          echo "check demo_fail exit=${code}"
+          test "${code}" -eq 1

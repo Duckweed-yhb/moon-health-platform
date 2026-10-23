@@ -94,7 +94,7 @@ pub fn render_health(r : HealthReport) -> String {
 /// 渲染为一行 JSON（便于脚本消费）。
 pub fn to_json(r : HealthReport) -> String {  let mut s = "{"
   s = s + "\"subject\":\"" + escape(r.subject) + "\""
-  s = s + ",\"verdict\":\"" + r.verdict + "\""
+  s = s + ",\"verdict\":\"" + escape(r.verdict) + "\""
   s = s + ",\"verdict_explain\":\"" + escape(r.verdict_explain) + "\""
   s = s + ",\"verdict_mark\":\"" + escape(r.verdict_mark) + "\""
   s = s + ",\"usable\":" + (if r.usable { "true" } else { "false" })
@@ -211,6 +211,12 @@ test "to_json 对含换行的 verdict_explain 产出合法转义" {
   let j = to_json(r)
   assert_true(j.contains("\"verdict_explain\":\"line1\\nline2\""))
   assert_true(j.contains("\"verdict_mark\":\"🔒\""))
+}
+
+test "to_json 对 verdict 也转义特殊字符" {
+  let r = make_health_report("a/b", "Ver\"d", "ok", "✅", true, 0, 0, false)
+  let j = to_json(r)
+  assert_true(j.contains("\"verdict\":\"Ver\\\"d\""))
 }
 
 // ---------- 编排合并逻辑边界用例（A3 补强） ----------

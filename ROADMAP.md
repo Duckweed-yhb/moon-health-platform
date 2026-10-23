@@ -11,7 +11,7 @@
 - [x] 生态普查报告：`docs/ecosystem-survey-2026-10.md`（48 包普查 + depsight 对标 + 结论与评审意义）
 - [x] 平台自身 `survey` 子命令：复用 moon-hive survey，`--registry` 走 mooncakes（不依赖 GitHub），可输出 Markdown / JSON 报告——平台可自产生态普查
 - [x] 平台自身 `check` 批量样例报告（对一批候选用 moonhealth CLI 跑 `check`，沉淀可复现报告：`docs/check-batch-sample-2026-10.md`，含受控样例 `docs/check-samples/`）
-- [x] 补测试：编排合并逻辑边界用例 + jsonparse / report / orchestrate 边界补强（测试 18 → 74，native + wasm-gc 双后端全绿）
+- [x] 补测试：编排合并逻辑边界用例 + jsonparse / report / orchestrate 边界补强（测试 18 → 75，native + wasm-gc 双后端全绿）
 - [x] 平台自产生态普查报告：`docs/ecosystem-survey-platform-2026-10.md`（+ `.json`，10-12 工具链，与 09-20 基线逐包对比 8 包漂移）
 - [x] 三个已知 bug 修复：jsonparse `\u` 校验 / 代理对合并、report 表格转义、orchestrate `to_json` escape 补全（控制字符 / verdict_mark）
 - [x] 退出码文档统一：帮助文本 / 头注释 / README 对齐到实际使用的 0/1/10/12/14
