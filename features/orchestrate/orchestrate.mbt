@@ -45,7 +45,8 @@ pub struct HealthReport {
 }
 
 ///|
-/// 构造一个合并的健康报告。healthy = usable && (!has_docs || docs_failed == 0)。
+/// 构造一个合并的健康报告。healthy = usable && (!verified_docs || docs_failed == 0)。
+/// 其中 verified_docs 为「实际产生文档验证结果」（has_docs 且 通过+失败 > 0）。
 pub fn make_health_report(
   subject : String,
   verdict : String,
@@ -56,7 +57,11 @@ pub fn make_health_report(
   docs_failed : Int,
   has_docs : Bool
 ) -> HealthReport {
-  let healthy = usable && (if has_docs { docs_failed == 0 } else { true })
+  // 防御：仅当实际产生了文档验证结果（docs_passed + docs_failed > 0）才认可 has_docs。
+  // 若声称 has_docs 但总块数为 0（内部不一致 / 外部构造的造假输入），归一化为"无文档"，
+  // 避免报告谎称"0 通过 / 0 失败"地验证过文档，也避免凭 0 失败当作文档全过而判健康。
+  let verified_docs = has_docs && (docs_passed + docs_failed) > 0
+  let healthy = usable && (if verified_docs { docs_failed == 0 } else { true })
   {
     subject,
     verdict,
@@ -65,7 +70,7 @@ pub fn make_health_report(
     usable,
     docs_passed,
     docs_failed,
-    has_docs,
+    has_docs: verified_docs,
     healthy,
   }
 }
@@ -220,9 +225,27 @@ test "healthy 真值表：无文档 + 包不可用 → 不健康" {
   assert_false(r.healthy)
 }
 
-test "healthy 真值表：有文档但 0 过 0 失（total=0 却标 has_docs）→ 健康" {
+test "防御：has_docs=true 但 0 过 0 失 → 归一化为无文档（不谎称验证过文档）" {
   let r = make_health_report("o/p", "Verified", "", "✅", true, 0, 0, true)
+  // 声称有文档却没任何验证块：has_docs 不被认可，归一化为无文档
+  assert_false(r.has_docs)
+  // 无文档语义下只看包可用性
   assert_true(r.healthy)
+}
+
+test "防御：has_docs=true 但 0 块，usable=false → 归一化为无文档且不健康" {
+  let r = make_health_report("c/d", "Unsafe", "含 FFI", "🔒", false, 0, 0, true)
+  assert_false(r.has_docs)
+  assert_false(r.healthy)
+}
+
+test "防御：有真实文档块时 has_docs 才被认可并参与判定" {
+  let ok = make_health_report("e/f", "Verified", "", "✅", true, 5, 0, true)
+  assert_true(ok.has_docs)
+  assert_true(ok.healthy)
+  let bad = make_health_report("g/h", "Verified", "", "✅", true, 1, 3, true)
+  assert_true(bad.has_docs)
+  assert_false(bad.healthy)
 }
 
 test "healthy 真值表：可用 + 文档全过 → 健康（重复确认）" {

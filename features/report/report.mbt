@@ -221,10 +221,11 @@ test "超长 subject（200 字符）原样渲染" {
 }
 
 test "0 与极大文档计数渲染与统计" {
+  // a：has_docs=true 但 0 块 → 归一化为无文档，文档列渲染横杠
   let a = @orchestrate.make_health_report("p/q", "Verified", "", "✅", true, 0, 0, true)
   let b = @orchestrate.make_health_report("r/s", "Verified", "", "✅", true, 123456789, 987654321, true)
   let md = render_markdown([a, b], "T")
-  assert_true(md.contains("| 0过/0失 |"))
+  assert_true(md.contains("| — |"))
   assert_true(md.contains("| 123456789过/987654321失 |"))
   let sum = summarize([a, b])
   assert_eq(sum.docs_failed_total, 987654321)
