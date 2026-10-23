@@ -17,11 +17,14 @@
 - 评审叙事与可持续性：`docs/ecosystem-survey-2026-10.md` 补「结论与评审意义」（把 48 包普查提炼为评审洞察：生态问题真实有规模、静态健康分不足以支撑决策、平台填补统一健康信号空白）；README 新增「项目可持续性」章节（依赖锁定、验证后端可解耦、平台能力独立演进、开源治理）；ROADMAP 更新演进原则与完成状态。
 - 平台 `survey` 子命令：复用 moon-hive `features/survey` 做批量生态普查，`--registry` 从 mooncakes 注册表验证发布版本（不依赖 GitHub 克隆），支持 `--out-md` / `--out-json` 输出报告——平台可自产生态普查报告。实测在 2026-10-12 工具链下 `gmlewis/base64` 由 DoesNotCompile 变为 Verified，印证"结论绑定工具链版本"的平台价值。
 - 平台自身 `check` 批量样例报告：用 `moonhealth check` 对 6 个候选（2 受控演示 + 2 真实远端 `bobzhang/jsonl`/`moonbitlang/core` + 1 真实本地 moon-hive）跑完整编排，归因分布 Verified / TestFailing / DoesNotCompile / Unsafe 全覆盖，报告见 `docs/check-batch-sample-2026-10.md`（含受控样例 `docs/check-samples/` 可复现）。
+- `--moonproof` 端到端演示报告：平台 CLI 一次调用完成归因 + MoonProof 文档验证 + JSON 严格解析，实测 moon-hive 真实项目（42 文档块 = 3 过 / 39 失），报告见 `docs/moonproof-sample-2026-10.md`（含中文路径编码局限）。
+- 文档同步：README 更新测试数（34 → 69）、生态数据更新到平台自生成报告（25.0% / Verified 12）并补三份报告引用（check 批量样例、moonproof 端到端）。
 
 ### Fixed
 
 - `features/jsonparse`：`\uXXXX` 逐 nibble 校验，任一非十六进制即报错（修复 `\u12g4` 被静默接受）；代理对合并（`\uD83D\uDE00` 合并为单个补充字符，孤立/错配代理报错）。
 - `features/report`：`render_markdown` 表格单元格转义（竖线 `\|`、换行替换为空格），修复单元格含 `|`/换行破坏表格结构与列数的问题。
+- `features/orchestrate`：`to_json` 的 `escape` 补全——转义换行/回车/制表符及 0x00–0x1F 控制字符、`verdict_mark` 转义，保证平台自产 JSON 始终合法；改用 StringBuilder，消除 O(n²) 拼接。
 
 ### Known Issues
 

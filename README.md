@@ -20,7 +20,7 @@ moon-health-platform/
 │   ├── report/            统一报告渲染：Markdown / JSON / 统计（纯计算，四后端可移植）
 │   └── jsonparse/         最小但严格的 JSON 解析器（纯计算，解析 MoonProof --out 报告）
 ├── cmd/
-│   └── moonhealth/        CLI 入口：check / doctor / version / help
+│   └── moonhealth/        CLI 入口：check / survey / doctor / version / help
 ├── moon.mod               包声明（Duckweed/moon-health-platform）
 └── LICENSE                MIT
 ```
@@ -151,7 +151,7 @@ JSON: [{"subject":"moonbit-community/yaml","verdict":"Verified",...}]
 
 ```bash
 moon build --target native        # 构建
-moon test --target native         # 运行全部测试（当前 34 个）
+moon test --target native         # 运行全部测试（当前 69 个，native + wasm-gc 双后端全绿）
 ```
 
 > 说明：本地若在含中文的目录（如 `E:\future\yhb\03-竞赛\...`）跑 native 测试，可能触发 gcc 汇编器无法生成 `.obj` 的中文路径编码问题；此时可用 `moon test --target wasm-gc` 验证纯计算模块，或把仓库 clone 到无中文路径。
@@ -160,17 +160,19 @@ moon test --target native         # 运行全部测试（当前 34 个）
 
 ## 实测生态数据（2026-10）
 
-用 `survey --registry` 对 mooncakes.io **48 个真实发布包**做了一次生态普查（验证用户 `moon add` 真正装到的版本）：
+用平台自身的 `survey --registry` 对 mooncakes.io **48 个真实发布包**做生态普查，且**由平台 CLI 在同一工具链上自生成报告**（非第三方输出）：
 
-- **可用率 27.1%**（13/48 可直接用）；48 个全部在限时内完成验证（原始 2 个 fetch 挂起已随 moon-hive 超时修复解决）
-- 结论分布：Verified 13 · NoManifest 14 · Unsafe 9 · DoesNotCompile 6 · ToolchainMismatch 3 · TestFailing 2 · TimedOut 1
-- 对比 2026-09 的 18 包基线（16.7%），样本扩大约 2.7 倍
+- **可用率 25.0%**（12/48 可直接用，工具链 2026-10-12）；48 个全部在限时内完成验证
+- 结论分布：Verified 12 · FetchFailed 14 · Unsafe 9 · DoesNotCompile 3 · ToolchainMismatch 3 · MissingDependency 3 · TestFailing 2 · TimedOut 2
+- 与 09-20 基线（27.1% / NoManifest 14）逐包对比：**8 包状态漂移**——`gmlewis/base64` 由 DoesNotCompile 转 Verified、`mizchi/tempfile` 与 `moonbitlang/quickcheck` 转正、`gaato/http-async` 转 TestFailing 等
 
-> 关键发现：约三成包可直接用，大量小工具包（JSON/编码类）发布结构缺清单（NoManifest），3 例工具链版本漂移被归因引擎正确判别。这正说明"生态成熟度"是采用 MoonBit 前必须评估的风险项，也是本平台的价值所在。
+> 关键发现：**"能不能用"必须绑定工具链版本**——同一包在不同工具链下结论会变化（base64 在 09-20 编译不过、在 10-12 转 Verified）。这正说明生态成熟度是采用 MoonBit 前必须评估的风险项，也是平台作为"健康信号"工具的核心价值。
 
-> 工具链演进实证：上述结论绑定 2026-09-20 工具链。用平台自身的 `survey --registry` 在 2026-10-12 工具链复测，`gmlewis/base64` 由 DoesNotCompile 变为 Verified——同一包在不同工具链下结论会变化。这正说明"能不能用"必须绑定工具链版本、用真实工具链验证，而非给一次性结论；也是本平台作为"健康信号"工具的核心价值。
-
-完整数据见 [docs/ecosystem-survey-2026-10.md](./docs/ecosystem-survey-2026-10.md)。平台自身也可用 `moonhealth survey --registry` 复现此类普查。
+完整数据（平台自身可复现）：
+- [docs/ecosystem-survey-2026-10.md](./docs/ecosystem-survey-2026-10.md) —— 09-20 基线普查 + depsight 对标
+- [docs/ecosystem-survey-platform-2026-10.md](./docs/ecosystem-survey-platform-2026-10.md) —— 平台自生成普查报告（Markdown + JSON）
+- [docs/check-batch-sample-2026-10.md](./docs/check-batch-sample-2026-10.md) —— 平台自身 `check` 批量样例（归因分布全覆盖，含受控样例）
+- [docs/moonproof-sample-2026-10.md](./docs/moonproof-sample-2026-10.md) —— `--moonproof` 归因 + 文档验证端到端
 
 ## 项目可持续性
 

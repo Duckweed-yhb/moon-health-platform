@@ -92,7 +92,7 @@ pub fn to_json(r : HealthReport) -> String {  let mut s = "{"
   s = s + "\"subject\":\"" + escape(r.subject) + "\""
   s = s + ",\"verdict\":\"" + r.verdict + "\""
   s = s + ",\"verdict_explain\":\"" + escape(r.verdict_explain) + "\""
-  s = s + ",\"verdict_mark\":\"" + r.verdict_mark + "\""
+  s = s + ",\"verdict_mark\":\"" + escape(r.verdict_mark) + "\""
   s = s + ",\"usable\":" + (if r.usable { "true" } else { "false" })
   s = s + ",\"docs_passed\":" + r.docs_passed.to_string()
   s = s + ",\"docs_failed\":" + r.docs_failed.to_string()
@@ -102,19 +102,39 @@ pub fn to_json(r : HealthReport) -> String {  let mut s = "{"
 }
 
 ///|
-/// JSON 字符串转义（最小实现：引号与反斜杠）。
+/// JSON 字符串转义：引号、反斜杠与全部控制字符（`\n` `\r` `\t` 及 0x00–0x1F），
+/// 保证平台自产 JSON 始终合法。用 StringBuilder 避免逐字符字符串拼接。
 fn escape(s : String) -> String {
-  let mut out = ""
+  let b = StringBuilder()
   for c in s {
+    let n = c.to_int()
     if c == '"' {
-      out = out + "\\\""
+      b.write_string("\\\"")
     } else if c == '\\' {
-      out = out + "\\\\"
+      b.write_string("\\\\")
+    } else if c == '\n' {
+      b.write_string("\\n")
+    } else if c == '\r' {
+      b.write_string("\\r")
+    } else if c == '\t' {
+      b.write_string("\\t")
+    } else if n < 0x20 {
+      b.write_string("\\u00" + hex_digit(n / 16) + hex_digit(n % 16))
     } else {
-      out = out + c.to_string()
+      b.write_char(c)
     }
   }
-  out
+  b.to_string()
+}
+
+///|
+/// 0–15 转成单个十六进制字符。
+fn hex_digit(v : Int) -> String {
+  if v < 10 {
+    (0x30 + v).unsafe_to_char().to_string()
+  } else {
+    (0x61 + (v - 10)).unsafe_to_char().to_string()
+  }
 }
 
 // ---------- 单元测试 ----------
@@ -170,6 +190,23 @@ test "to_json 输出合法字段" {
 test "escape 处理引号与反斜杠" {
   assert_eq(escape("a\"b"), "a\\\"b")
   assert_eq(escape("c\\d"), "c\\\\d")
+}
+
+test "escape 转义换行/回车/制表符与其他控制字符" {
+  assert_eq(escape("a\nb\rc\td"), "a\\nb\\rc\\td")
+  assert_eq(escape("\u{07}"), "\\u0007")
+  assert_eq(escape("\u{1F}"), "\\u001f")
+}
+
+test "escape 保留可见 Unicode（中英文与补充字符）" {
+  assert_eq(escape("中文 ok 😀"), "中文 ok 😀")
+}
+
+test "to_json 对含换行的 verdict_explain 产出合法转义" {
+  let r = make_health_report("p/q", "Unsafe", "line1\nline2", "🔒", false, 0, 0, false)
+  let j = to_json(r)
+  assert_true(j.contains("\"verdict_explain\":\"line1\\nline2\""))
+  assert_true(j.contains("\"verdict_mark\":\"🔒\""))
 }
 
 // ---------- 编排合并逻辑边界用例（A3 补强） ----------
