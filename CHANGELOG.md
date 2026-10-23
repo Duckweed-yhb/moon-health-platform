@@ -21,6 +21,7 @@
 - 文档同步：README 更新测试数（34 → 69）、生态数据更新到平台自生成报告（25.0% / Verified 12）并补三份报告引用（check 批量样例、moonproof 端到端）。
 - 评审申报叙事：`docs/submission-narrative-2026-10.md` 按评审四维（技术/场景/治理/长期）组织项目价值，每项论断附证据索引；README 报告列表挂载该文档。
 - 平台 CLI 退出码契约冒烟验证：`docs/cli-smoke-2026-10.md` 实测 7 条命令（version/help/doctor/noarg/badcmd/check 全健康/check 有失败）的退出码 0/1/14 全部与约定一致，附复现命令。
+- 文档全量同步：README 测试数 69 → 74（与实际 `moon test` 输出一致）；ROADMAP 勾选近期已完成项（平台自生成普查报告、退出码统一、防御、CLI 冒烟、评审叙事），批量模式标注已实现，中文路径项标注为归档依赖、暂搁置。
 
 ### Fixed
 

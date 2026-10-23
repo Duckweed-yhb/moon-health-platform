@@ -11,13 +11,20 @@
 - [x] 生态普查报告：`docs/ecosystem-survey-2026-10.md`（48 包普查 + depsight 对标 + 结论与评审意义）
 - [x] 平台自身 `survey` 子命令：复用 moon-hive survey，`--registry` 走 mooncakes（不依赖 GitHub），可输出 Markdown / JSON 报告——平台可自产生态普查
 - [x] 平台自身 `check` 批量样例报告（对一批候选用 moonhealth CLI 跑 `check`，沉淀可复现报告：`docs/check-batch-sample-2026-10.md`，含受控样例 `docs/check-samples/`）
-- [x] 补测试：编排合并逻辑（`healthy` 判定、`has_docs` 分支）的边界用例（测试 18 → 34）
+- [x] 补测试：编排合并逻辑边界用例 + jsonparse / report / orchestrate 边界补强（测试 18 → 74，native + wasm-gc 双后端全绿）
+- [x] 平台自产生态普查报告：`docs/ecosystem-survey-platform-2026-10.md`（+ `.json`，10-12 工具链，与 09-20 基线逐包对比 8 包漂移）
+- [x] 三个已知 bug 修复：jsonparse `\u` 校验 / 代理对合并、report 表格转义、orchestrate `to_json` escape 补全（控制字符 / verdict_mark）
+- [x] 退出码文档统一：帮助文本 / 头注释 / README 对齐到实际使用的 0/1/10/12/14
+- [x] `make_health_report` 防御：`has_docs` 仅在真实文档块 > 0 时认可，杜绝造假输入
+- [x] `--moonproof` 端到端演示报告：`docs/moonproof-sample-2026-10.md`（真实 42 文档块，局限如实记录）
+- [x] 平台 CLI 退出码契约冒烟验证：`docs/cli-smoke-2026-10.md`（0/1/14 实测全一致）
+- [x] 评审申报叙事：`docs/submission-narrative-2026-10.md`（四维自评 + 证据索引）
 
 ## 中期
 
-- [ ] 子进程命令中文路径支持：moon-hive `platform/proc` 宽字符分支（参照 fs 0.2.2–0.2.4），使 `--moonproof` 在本机中文路径下可靠
+- [ ] 子进程命令中文路径支持：moon-hive `platform/proc` 宽字符分支——**moon-hive 已归档、proc C 层无源码，本仓库不可改，暂搁置**；缓解：本地用 ASCII 路径跑 `--moonproof`
 - [ ] 报告多样化：支持更多输出格式 / 更可读的排版
-- [ ] 批量模式：一次扫描多个候选，输出汇总报表
+- [x] 批量模式：一次扫描多个候选（`check` 原生支持 `<候选>...`，见 `docs/check-batch-sample-2026-10.md`）
 - [ ] 增量 / 缓存：避免重复拉取与重复构建
 
 ## 远期

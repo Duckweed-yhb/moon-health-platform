@@ -151,7 +151,7 @@ JSON: [{"subject":"moonbit-community/yaml","verdict":"Verified",...}]
 
 ```bash
 moon build --target native        # 构建
-moon test --target native         # 运行全部测试（当前 69 个，native + wasm-gc 双后端全绿）
+moon test --target native         # 运行全部测试（当前 74 个，native + wasm-gc 双后端全绿）
 ```
 
 > 说明：本地若在含中文的目录（如 `E:\future\yhb\03-竞赛\...`）跑 native 测试，可能触发 gcc 汇编器无法生成 `.obj` 的中文路径编码问题；此时可用 `moon test --target wasm-gc` 验证纯计算模块，或把仓库 clone 到无中文路径。
