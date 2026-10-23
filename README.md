@@ -173,6 +173,7 @@ moon test --target native         # 运行全部测试（当前 69 个，native 
 - [docs/ecosystem-survey-platform-2026-10.md](./docs/ecosystem-survey-platform-2026-10.md) —— 平台自生成普查报告（Markdown + JSON）
 - [docs/check-batch-sample-2026-10.md](./docs/check-batch-sample-2026-10.md) —— 平台自身 `check` 批量样例（归因分布全覆盖，含受控样例）
 - [docs/moonproof-sample-2026-10.md](./docs/moonproof-sample-2026-10.md) —— `--moonproof` 归因 + 文档验证端到端
+- [docs/submission-narrative-2026-10.md](./docs/submission-narrative-2026-10.md) —— 评审申报叙事（四维自评 + 证据索引）
 
 ## 项目可持续性
 

@@ -19,6 +19,7 @@
 - 平台自身 `check` 批量样例报告：用 `moonhealth check` 对 6 个候选（2 受控演示 + 2 真实远端 `bobzhang/jsonl`/`moonbitlang/core` + 1 真实本地 moon-hive）跑完整编排，归因分布 Verified / TestFailing / DoesNotCompile / Unsafe 全覆盖，报告见 `docs/check-batch-sample-2026-10.md`（含受控样例 `docs/check-samples/` 可复现）。
 - `--moonproof` 端到端演示报告：平台 CLI 一次调用完成归因 + MoonProof 文档验证 + JSON 严格解析，实测 moon-hive 真实项目（42 文档块 = 3 过 / 39 失），报告见 `docs/moonproof-sample-2026-10.md`（含中文路径编码局限）。
 - 文档同步：README 更新测试数（34 → 69）、生态数据更新到平台自生成报告（25.0% / Verified 12）并补三份报告引用（check 批量样例、moonproof 端到端）。
+- 评审申报叙事：`docs/submission-narrative-2026-10.md` 按评审四维（技术/场景/治理/长期）组织项目价值，每项论断附证据索引；README 报告列表挂载该文档。
 
 ### Fixed
 
